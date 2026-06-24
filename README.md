@@ -15,6 +15,17 @@ No need for stupid openApi / MQTT stuff
 
 ----
 
+For the DR134 settings I used:
+* Work mode TCP server
+* Baud rate : 115200
+* Data Size : 8 bit
+* Parity: none
+* Stop bits : 1
+
+In my case (using the PUSR-DR134) in EDGE gateway tab:
+* working mode: Modbus Simplpe protocol
+
+I guess any DR134 device that simply converts modbus RTU data > TCP protocol data will work
 
 
 
