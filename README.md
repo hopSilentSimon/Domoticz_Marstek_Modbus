@@ -23,7 +23,7 @@ For the DR134 settings I used:
 * Stop bits : 1
 
 In my case (using the PUSR-DR134) in EDGE gateway tab:
-* working mode: Modbus Simplpe protocol
+* working mode: Modbus Simple protocol
 
 I guess any DR134 device that simply converts modbus RTU data > TCP protocol data will work
 
