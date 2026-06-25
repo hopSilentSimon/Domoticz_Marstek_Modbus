@@ -28,6 +28,14 @@ In my case (using the PUSR-DR134) in EDGE gateway tab:
 I guess any DR134 device that simply converts modbus RTU data > TCP protocol data will work
 
 
+----
+
+Changelog 1.1:
+
+- Supports pymodbus 2.x and 3.x
+- Compatible with older Domoticz installations (e.g. 2025.1 on Raspberry P
+- Logs the installed pymodbus version (when available)
+
 
 
 
