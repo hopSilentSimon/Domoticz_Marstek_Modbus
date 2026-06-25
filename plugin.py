@@ -2,7 +2,7 @@
 <plugin key="Marstek_modbus"
         name="Marstek Venus Modbus"
         author="SilentSimon"
-        version="1.0">
+        version="1.1">
 
     <params>
         <param field="Address" label="Gateway IP Address" width="200px" required="true"/>
@@ -14,7 +14,12 @@
 """
 
 import Domoticz
-from pymodbus.client import ModbusTcpClient
+import pymodbus
+
+try:
+    from pymodbus.client import ModbusTcpClient
+except ImportError:
+    from pymodbus.client.sync import ModbusTcpClient
 
 MODE_NAMES = {0:"Manual",1:"Anti-feed",2:"Trade"}
 MODE_LEVELS = {0:0,1:10,2:20}
@@ -77,20 +82,46 @@ class BasePlugin:
             else:
                 Domoticz.Device(Name=name,Unit=unit,TypeName=typ).Create()
 
+        try:
+            Domoticz.Log("Marstek Modbus: pymodbus {}".format(pymodbus.__version__))
+        except Exception:
+            Domoticz.Log("Marstek Modbus: pymodbus version unknown")
+
+        try:
+            self._read_holding(self.client(),0,1)
+            api="new"
+        except Exception:
+            api="legacy"
+
+        Domoticz.Log("Marstek Modbus: compatibility layer enabled")
         Domoticz.Heartbeat(10)
 
     def client(self):
         return ModbusTcpClient(Parameters["Address"], port=int(Parameters["Port"]))
 
+    def _read_holding(self,c,address,count):
+        slave=int(Parameters["Mode1"])
+        try:
+            return c.read_holding_registers(address=address,count=count,device_id=slave)
+        except (TypeError, AttributeError):
+            return c.read_holding_registers(address,count,unit=slave)
+
+    def _write_register(self,c,address,value):
+        slave=int(Parameters["Mode1"])
+        try:
+            return c.write_register(address=address,value=value,device_id=slave)
+        except (TypeError, AttributeError):
+            return c.write_register(address,value,unit=slave)
+
     def read_u16(self,c,r):
-        return c.read_holding_registers(address=r,count=1,device_id=int(Parameters["Mode1"])).registers[0]
+        return self._read_holding(c,r,1).registers[0]
 
     def read_s16(self,c,r):
         v=self.read_u16(c,r)
         return v-65536 if v>32767 else v
 
     def read_u32(self,c,r):
-        rr=c.read_holding_registers(address=r,count=2,device_id=int(Parameters["Mode1"]))
+        rr=self._read_holding(c,r,2)
         return (rr.registers[0] << 16) | rr.registers[1]
 
     def onCommand(self, Unit, Command, Level, Hue):
@@ -100,8 +131,7 @@ class BasePlugin:
         if not c.connect():
             return
         try:
-            c.write_register(address=43000,value=LEVEL_TO_MODE.get(Level,0),
-                             device_id=int(Parameters["Mode1"]))
+            self._write_register(c,43000,LEVEL_TO_MODE.get(Level,0))
         finally:
             c.close()
 
