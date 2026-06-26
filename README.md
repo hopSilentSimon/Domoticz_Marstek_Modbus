@@ -29,12 +29,30 @@ I guess any DR134 device that simply converts modbus RTU data > TCP protocol dat
 
 
 ----
+Changelog 1.2:
+- Improved _read_holding():
+  - Detects no response.
+  - Detects Modbus exception responses (isError()).
+  - Detects invalid responses that don't contain .registers.
+  - Reports the register number in the error.
+- Adds a communication self-test by reading register 30000 immediately after connecting.
+- Logs gateway information at startup:
+  - Gateway IP
+  - TCP port
+  - Slave ID
+  - Poll interval
+- Adds a clearer troubleshooting message when a Modbus error occurs, reminding users to check:
+  - Slave ID
+  - Baud rate (115200)
+  - RS485 A/B wiring
+  - DR134 "Modbus Simple Protocol Conversion" mode
+
 
 Changelog 1.1:
-
 - Supports pymodbus 2.x and 3.x
 - Compatible with older Domoticz installations (e.g. 2025.1 on Raspberry P
 - Logs the installed pymodbus version (when available)
+
 
 
 
