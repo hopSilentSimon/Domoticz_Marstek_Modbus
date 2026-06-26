@@ -2,7 +2,7 @@
 <plugin key="Marstek_modbus"
         name="Marstek Venus Modbus"
         author="SilentSimon"
-        version="1.1">
+        version="1.2">
 
     <params>
         <param field="Address" label="Gateway IP Address" width="200px" required="true"/>
@@ -94,6 +94,7 @@ class BasePlugin:
             api="legacy"
 
         Domoticz.Log("Marstek Modbus: compatibility layer enabled")
+        Domoticz.Log("Marstek Modbus: Gateway {}:{} Slave {} Poll {}s".format(Parameters["Address"],Parameters["Port"],Parameters["Mode1"],Parameters["Mode6"]))
         Domoticz.Heartbeat(10)
 
     def client(self):
@@ -102,9 +103,17 @@ class BasePlugin:
     def _read_holding(self,c,address,count):
         slave=int(Parameters["Mode1"])
         try:
-            return c.read_holding_registers(address=address,count=count,device_id=slave)
+            rr=c.read_holding_registers(address=address,count=count,device_id=slave)
         except (TypeError, AttributeError):
-            return c.read_holding_registers(address,count,unit=slave)
+            rr=c.read_holding_registers(address,count,unit=slave)
+
+        if rr is None:
+            raise Exception(f"No response for register {address}")
+        if hasattr(rr,"isError") and rr.isError():
+            raise Exception(f"Modbus error reading register {address}: {rr}")
+        if not hasattr(rr,"registers"):
+            raise Exception(f"Invalid Modbus response for register {address}: {type(rr).__name__}")
+        return rr
 
     def _write_register(self,c,address,value):
         slave=int(Parameters["Mode1"])
@@ -149,6 +158,7 @@ class BasePlugin:
 
         try:
             Devices[11].Update(0,"Connected")
+            self.read_u16(c,30000)
 
             soc=self.read_u16(c,34002)/10.0
             capacity=self.read_u16(c,32105)*0.001
@@ -216,6 +226,7 @@ class BasePlugin:
             Devices[23].Update(daily_discharge_wh, str(daily_discharge_wh))
         except Exception as e:
             Domoticz.Error("Marstek Modbus: {}".format(e))
+            Domoticz.Error("Marstek Modbus: Verify Slave ID, baud rate (115200), RS485 A/B wiring and DR134 Modbus Simple Protocol Conversion mode.")
         finally:
             c.close()
 
